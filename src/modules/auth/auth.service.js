@@ -2,7 +2,7 @@ const User = require("./auth.model");
 const bcrypt = require("bcrypt");
 
 // Register user
-const registerUser = async (payload) => {
+const register = async (payload) => {
   // Descructure data
   const { email, password } = payload;
 
@@ -15,7 +15,7 @@ const registerUser = async (payload) => {
   }
 
   // Hash password
-  const hashedPassword = bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   payload.password = hashedPassword;
 
   // Create user
@@ -25,12 +25,12 @@ const registerUser = async (payload) => {
 };
 
 // Login user
-const loginUser = async (payload) => {
+const login = async (payload) => {
   // Destructure data
   const { email, password } = payload;
 
   // Find user from database
-  const user = await User.find({ email });
+  const user = await User.findOne({ email }).select("+password");
 
   // Check if the exist
   if (!user) {
@@ -57,6 +57,6 @@ const loginUser = async (payload) => {
 const forgotPassword = async () => {};
 
 module.exports = {
-  registerUser,
-  loginUser,
+  register,
+  login,
 };

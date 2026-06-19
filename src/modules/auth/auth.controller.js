@@ -1,20 +1,20 @@
-const { registerUser, loginUser } = require("./auth.service");
+const { register, login } = require("./auth.service");
 
 // Register controller
-const register = async (req, res, next) => {
-  const result = await registerUser(req.body);
+const registerUser = async (req, res, next) => {
+  const result = await register(req.body);
 
   res.json(result);
 };
 
 // Login controller
-const login = async (req, res, next) => {
-  const result = await loginUser(req.body);
+const loginUser = async (req, res, next) => {
+  const result = await login(req.body);
 
   res.json(result);
 };
 
 module.exports = {
-  register,
-  login,
+  registerUser,
+  loginUser,
 };

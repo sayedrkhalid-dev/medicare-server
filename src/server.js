@@ -1,10 +1,14 @@
-const app = require("./index");
+const app = require("./app");
+const { connectDB } = require("./config/db");
+const { initAuth, getAuth, mountAuth } = require("./lib/auth");
 const { PORT } = require("./config/env");
-const connectDB = require("./config/db.js");
 
 const main = async () => {
   try {
     await connectDB();
+    initAuth();
+    mountAuth(getAuth());
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

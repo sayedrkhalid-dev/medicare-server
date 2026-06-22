@@ -1,4 +1,4 @@
-const httpStatus = require("http-status");
+const { status } = require("http-status");
 const { getAuth } = require("../lib/auth");
 
 const authenticate = async (req, res, next) => {
@@ -10,7 +10,7 @@ const authenticate = async (req, res, next) => {
     });
 
     if (!session) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
+      return res.status(status.UNAUTHORIZED).json({
         success: false,
         message: "Unauthorized access",
       });
@@ -21,7 +21,7 @@ const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-    return res.status(httpStatus.UNAUTHORIZED).json({
+    return res.status(status.UNAUTHORIZED).json({
       success: false,
       message: "Unauthorized access",
     });

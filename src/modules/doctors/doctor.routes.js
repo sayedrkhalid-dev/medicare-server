@@ -8,9 +8,9 @@ const doctorController = require("./doctor.controllers");
 const router = express.Router();
 
 // Public
-router.get("/doctors", doctorController.getAllDoctors);
+router.get("/", doctorController.getAllDoctors);
 
-router.get("/doctors/:doctorId", doctorController.getDoctorById);
+router.get("/:doctorId", doctorController.getDoctorById);
 
 // Doctor
 router.get(

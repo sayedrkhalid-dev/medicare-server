@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 
 const doctorRoutes = require("./modules/doctors/doctor.routes");
+const doctorApplicationRoutes = require("./modules/doctorApplications/doctorApplication.routes");
 
 // Module scuffolding - (App object)
 const app = express();
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
 });
 
 // All function invocations - (All routes)
-app.use("/", doctorRoutes);
+app.use("/doctors", doctorRoutes);
+app.use("/doctor-applications", doctorApplicationRoutes);
 
 module.exports = app;

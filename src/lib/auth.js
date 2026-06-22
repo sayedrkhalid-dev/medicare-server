@@ -49,6 +49,8 @@ const initAuth = () => {
 
 const getAuth = () => auth;
 
-const mountAuth = (authObj) => app.use("/api/auth", toNodeHandler(authObj));
+const mountAuth = (app, authObj) => {
+  app.use("/api/auth", toNodeHandler(authObj));
+};
 
 module.exports = { initAuth, getAuth, mountAuth };

@@ -16,6 +16,13 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    if (session.user.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended",
+      });
+    }
+
     req.user = session.user;
     req.session = session.session;
 

@@ -35,10 +35,41 @@ const initAuth = () => {
           required: true,
           defaultValue: "patient",
         },
+
         gender: {
           type: "string",
           required: true,
           defaultValue: "male",
+        },
+
+        phone: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+
+        address: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+
+        dateOfBirth: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+
+        bloodGroup: {
+          type: "string",
+          required: false,
+          defaultValue: "",
+        },
+
+        status: {
+          type: "string",
+          required: true,
+          defaultValue: "active",
         },
       },
     },

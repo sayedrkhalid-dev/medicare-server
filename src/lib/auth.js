@@ -13,8 +13,11 @@ const initAuth = () => {
     throw new Error("DB not connected yet — call initAuth after connectDB()");
 
   auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL, // e.g. http://localhost:8080
-    trustedOrigins: ["http://localhost:3000"],
+    baseURL: process.env.BETTER_AUTH_URL,
+    trustedOrigins: [
+      "http://localhost:3000",
+      "https://medicare-server-isbj.onrender.com",
+    ],
     database: mongodbAdapter(db),
 
     emailAndPassword: {

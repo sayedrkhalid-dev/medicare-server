@@ -13,13 +13,24 @@ const initAuth = () => {
     throw new Error("DB not connected yet — call initAuth after connectDB()");
 
   auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL,
-    secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [
-      "http://localhost:3000",
-      "https://medicare-client-ruddy.vercel.app"
-    ],
-    database: mongodbAdapter(db),
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://medicare-client-ruddy.vercel.app"
+  ],
+  database: mongodbAdapter(db),
+
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: false, // you're cross-DOMAIN, not cross-subdomain, so leave this off
+    },
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      partitioned: true, // recommended for Chrome's CHIPS / cross-site cookie rules
+    },
+  },
 
     emailAndPassword: {
       enabled: true,

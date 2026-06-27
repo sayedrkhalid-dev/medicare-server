@@ -18,6 +18,8 @@ const notFound = require("./middlewares/notFound");
 // Module scuffolding - (App object)
 const app = express();
 
+app.set("trust proxy", 1);
+
 // Middlewares
 app.use(
   cors({

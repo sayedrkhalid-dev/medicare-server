@@ -14,6 +14,7 @@ const initAuth = () => {
 
   auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
+    secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: [
       "http://localhost:3000",
       "https://medicare-client-ruddy.vercel.app"

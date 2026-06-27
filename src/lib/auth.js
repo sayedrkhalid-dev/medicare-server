@@ -16,7 +16,6 @@ const initAuth = () => {
     baseURL: process.env.BETTER_AUTH_URL,
     trustedOrigins: [
       "http://localhost:3000",
-      "https://medicare-server-isbj.onrender.com",
     ],
     database: mongodbAdapter(db),
 

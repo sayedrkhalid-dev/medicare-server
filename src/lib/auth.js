@@ -25,10 +25,9 @@ const initAuth = () => {
     crossSubDomainCookies: {
       enabled: false, // you're cross-DOMAIN, not cross-subdomain, so leave this off
     },
-    defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
-      partitioned: true, // recommended for Chrome's CHIPS / cross-site cookie rules
+  defaultCookieAttributes: {
+    sameSite: "none",
+    secure: true,
     },
   },
 

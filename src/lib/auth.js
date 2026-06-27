@@ -16,6 +16,7 @@ const initAuth = () => {
     baseURL: process.env.BETTER_AUTH_URL,
     trustedOrigins: [
       "http://localhost:3000",
+      "https://medicare-client-ruddy.vercel.app"
     ],
     database: mongodbAdapter(db),
 

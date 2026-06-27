@@ -21,7 +21,7 @@ const app = express();
 // Middlewares
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "https://medicare-client-ruddy.vercel.app",
     credentials: true,
   }),
 );

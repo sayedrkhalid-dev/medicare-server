@@ -163,13 +163,33 @@ const createAppointmentAfterPayment = async (patientId, paymentId, payload) => {
 /**
  * Get patient appointments
  */
-const getMyAppointments = async (patientId) => {
+const getPatientAppointments = async (patientId) => {
   return Appointment.find({
     patientId,
   }).sort({
     appointmentDate: -1,
     createdAt: -1,
   });
+};
+
+const getDoctorAppointments = async (doctorId) => {
+  return Appointment.find({
+    userId: doctorId,
+  }).sort({
+    appointmentDate: -1,
+    createdAt: -1,
+  });
+};
+
+/**
+ * Get all appointments (admin)
+ */
+const getAllAppointments = async () => {
+  const appointments = await Appointment.find().sort({
+    createdAt: -1,
+  });
+
+  // return Promise.all(appointments.map(attachUser));
 };
 
 /**
@@ -209,7 +229,9 @@ const cancelAppointment = async (appointmentId, patientId) => {
 module.exports = {
   getAvailableSlots,
   createAppointmentAfterPayment,
-  getMyAppointments,
+  getPatientAppointments,
+  getDoctorAppointments,
+  getAllAppointments,
   getAppointmentById,
   cancelAppointment,
 };

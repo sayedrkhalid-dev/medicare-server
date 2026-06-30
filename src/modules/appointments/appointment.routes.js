@@ -21,10 +21,24 @@ router.get("/available-slots", appointmentController.getAvailableSlots);
 */
 
 router.get(
-  "/me",
+  "/patient-appointments",
   authenticate,
   authorize("patient"),
-  appointmentController.getMyAppointments,
+  appointmentController.getPatientAppointments,
+);
+
+router.get(
+  "/doctor-appointments",
+  authenticate,
+  authorize("doctor"),
+  appointmentController.getDoctorAppointments,
+);
+
+router.get(
+  "/all",
+  authenticate,
+  authorize("admin"),
+  appointmentController.getAllAppointments,
 );
 
 router.get(

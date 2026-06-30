@@ -25,13 +25,44 @@ const getAvailableSlots = async (req, res, next) => {
 /**
  * Get my appointments
  */
-const getMyAppointments = async (req, res, next) => {
+const getDoctorAppointments = async (req, res, next) => {
   try {
-    const result = await appointmentService.getMyAppointments(req.user.id);
+    const result = await appointmentService.getDoctorAppointments(req.user.id);
 
     res.status(status.OK).json({
       success: true,
       message: "Appointments retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getPatientAppointments = async (req, res, next) => {
+  try {
+    const result = await appointmentService.getPatientAppointments(req.user.id);
+
+    res.status(status.OK).json({
+      success: true,
+      message: "Appointments retrieved successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get my appointments
+ */
+const getAllAppointments = async (req, res, next) => {
+  try {
+    const result = await appointmentService.getAllAppointments();
+
+    res.status(status.OK).json({
+      success: true,
+      message: "All appointments retrieved successfully",
       data: result,
     });
   } catch (error) {
@@ -80,7 +111,9 @@ const cancelAppointment = async (req, res, next) => {
 
 module.exports = {
   getAvailableSlots,
-  getMyAppointments,
+  getDoctorAppointments,
+  getPatientAppointments,
+  getAllAppointments,
   getAppointmentById,
   cancelAppointment,
 };

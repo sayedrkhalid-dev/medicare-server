@@ -5,7 +5,6 @@ const doctorApplicationSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: [true, "User ID is required"],
       index: true,
     },
@@ -71,7 +70,6 @@ const doctorApplicationSchema = new mongoose.Schema(
 
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       default: null,
     },
 

@@ -1,7 +1,23 @@
 const createHttpError = require("http-errors");
 
+const { ObjectId } = require("mongodb");
+const { getDB } = require("../../config/db");
+
 const DoctorApplication = require("./doctorApplication.model");
 const Doctor = require("../doctors/doctor.model");
+
+const attachUser = async (application) => {
+  const db = getDB();
+
+  const user = await db.collection("user").findOne({
+    _id: application.userId,
+  });
+
+  return {
+    ...application.toObject(),
+    user,
+  };
+};
 
 const createApplication = async (userId, payload) => {
   const existingPendingApplication = await DoctorApplication.findOne({
@@ -38,36 +54,33 @@ const getMyApplication = async (userId) => {
 };
 
 const getAllApplications = async () => {
-  return DoctorApplication.find()
-    .populate("userId", "name email image role")
-    .sort({
-      createdAt: -1,
-    });
+  const applications = await DoctorApplication.find().sort({
+    createdAt: -1,
+  });
+
+  return Promise.all(applications.map(attachUser));
 };
 
 const getApplicationById = async (applicationId) => {
-  const application = await DoctorApplication.findById(applicationId).populate(
-    "userId",
-    "name email image role",
-  );
+  const application = await DoctorApplication.findById(applicationId);
 
   if (!application) {
     throw createHttpError(404, "Application not found");
   }
 
-  return application;
+  return attachUser(application);
 };
 
 const approveApplication = async (applicationId, adminId) => {
   const application = await DoctorApplication.findById(applicationId);
 
-  const existingDoctor = await Doctor.findOne({
-    userId: application.userId,
-  });
-
   if (!application) {
     throw createHttpError(404, "Application not found");
   }
+
+  const existingDoctor = await Doctor.findOne({
+    userId: application.userId,
+  });
 
   if (application.status === "approved") {
     throw createHttpError(400, "Application already approved");
@@ -83,6 +96,8 @@ const approveApplication = async (applicationId, adminId) => {
 
   await Doctor.create({
     userId: application.userId,
+
+    applicationId: application._id,
 
     bmdcNumber: application.bmdcNumber,
 

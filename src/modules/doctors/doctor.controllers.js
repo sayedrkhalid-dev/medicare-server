@@ -4,12 +4,35 @@ const doctorService = require("./doctor.services");
 
 const getAllDoctors = async (req, res, next) => {
   try {
-    const result = await doctorService.getAllDoctors(req.query);
+    // Get pagination and filter params from query
+    const {
+      page = 1,
+      limit = 10,
+      searchTerm,
+      specialization,
+      hospital,
+      minFee,
+      maxFee,
+    } = req.query;
 
-    res.status(status.OK).json({
+    // Pass raw query params straight to the service, which owns all
+    // filter-building logic. Avoids double-building (and conflicting)
+    // filters between the controller and the service.
+    const result = await doctorService.getAllDoctors({
+      page,
+      limit,
+      searchTerm,
+      specialization,
+      hospital,
+      minFee,
+      maxFee,
+    });
+
+    res.status(200).json({
       success: true,
       message: "Doctors retrieved successfully",
-      data: result,
+      data: result.doctors,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);

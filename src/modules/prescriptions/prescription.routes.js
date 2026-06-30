@@ -8,12 +8,12 @@ const prescriptionController = require("./prescription.controller");
 
 const router = express.Router();
 
-// Doctor routes
-router.post(
-  "/",
+// Admin routes
+router.get(
+  "/all",
   authenticate,
-  authorize("doctor"),
-  prescriptionController.createPrescription,
+  authorize("admin"),
+  prescriptionController.getAllPrescriptions,
 );
 
 // Patient routes
@@ -31,12 +31,12 @@ router.get(
   prescriptionController.getPrescriptionById,
 );
 
-// Admin routes
-router.get(
+// Doctor routes
+router.post(
   "/",
   authenticate,
-  authorize("admin"),
-  prescriptionController.getAllPrescriptions,
+  authorize("doctor"),
+  prescriptionController.createPrescription,
 );
 
 module.exports = router;

@@ -13,7 +13,7 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
-router.get("/doctor/:doctorId", doctorScheduleController.getDoctorSchedules);
+router.get("/:doctorId", doctorScheduleController.getDoctorSchedules);
 
 /*
 |--------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-const httpStatus = require("http-status");
+const { status } = require("http-status");
 
 const doctorScheduleService = require("./doctorSchedule.service");
 
@@ -11,9 +11,8 @@ const createSchedule = async (req, res, next) => {
       req.user.id,
       req.body,
     );
-    console.log(req.user.id);
 
-    res.status(httpStatus.CREATED).json({
+    res.status(status.CREATED).json({
       success: true,
       message: "Schedule created successfully",
       data: result,
@@ -30,7 +29,7 @@ const getMySchedules = async (req, res, next) => {
   try {
     const result = await doctorScheduleService.getMySchedules(req.user.id);
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedules retrieved successfully",
       data: result,
@@ -49,7 +48,7 @@ const getDoctorSchedules = async (req, res, next) => {
       req.params.doctorId,
     );
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedules retrieved successfully",
       data: result,
@@ -70,7 +69,7 @@ const updateSchedule = async (req, res, next) => {
       req.body,
     );
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedule updated successfully",
       data: result,
@@ -90,7 +89,7 @@ const activateSchedule = async (req, res, next) => {
       req.user.id,
     );
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedule activated successfully",
       data: result,
@@ -110,7 +109,7 @@ const deactivateSchedule = async (req, res, next) => {
       req.user.id,
     );
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedule deactivated successfully",
       data: result,
@@ -130,7 +129,7 @@ const deleteSchedule = async (req, res, next) => {
       req.user.id,
     );
 
-    res.status(httpStatus.OK).json({
+    res.status(status.OK).json({
       success: true,
       message: "Schedule deleted successfully",
     });

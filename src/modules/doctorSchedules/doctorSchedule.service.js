@@ -3,7 +3,7 @@ const createHttpError = require("http-errors");
 
 // Models
 const Doctor = require("../doctors/doctor.model");
-const DoctorSchedule = require("./doctorSchedule.service");
+const DoctorSchedule = require("./doctorSchedule.model");
 
 // Utilities
 const { timeToMinutes } = require("../../utils/time");
@@ -14,8 +14,15 @@ const { timeToMinutes } = require("../../utils/time");
  */
 const createSchedule = async (doctorId, payload) => {
   // Verify doctor profile exists
-  const doctor = await Doctor.findOne({ doctorId });
-  console.log(doctor, doctorId, payload);
+  const doctor = await Doctor.findOne({ userId: doctorId });
+  console.log(
+    "Doctor :",
+    doctor,
+    "Doctor ID : ",
+    doctorId,
+    "Payload data : ",
+    payload,
+  );
 
   if (!doctor) {
     throw createHttpError(403, "Doctor profile not found");
@@ -27,7 +34,7 @@ const createSchedule = async (doctorId, payload) => {
 
   // Validate time range
   if (start >= end) {
-    throw createHttpError(400, "End time must be greater than start time");
+    throw createHttpError(400, "End time must be greater than start time.");
   }
 
   // Get existing schedules for the same day
@@ -79,8 +86,8 @@ const getMySchedules = async (userId) => {
  * Get all active schedules of a doctor
  */
 const getDoctorSchedules = async (doctorId) => {
-  return DoctorSchedule.find({
-    doctorId,
+  return await DoctorSchedule.find({
+    doctorId: doctorId,
     isActive: true,
   }).sort({
     dayOfWeek: 1,

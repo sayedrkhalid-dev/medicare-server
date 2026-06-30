@@ -4,6 +4,8 @@
 const express = require("express");
 const cors = require("cors");
 
+const { BASE_APP_URL } = require("./config/env");
+
 const doctorRoutes = require("./modules/doctors/doctor.routes");
 const userRoutes = require("./modules/users/user.routes");
 const doctorApplicationRoutes = require("./modules/doctorApplications/doctorApplication.routes");
@@ -23,7 +25,7 @@ app.set("trust proxy", 1);
 // Middlewares
 app.use(
   cors({
-    origin: "https://medicare-client-ruddy.vercel.app",
+    origin: BASE_APP_URL,
     credentials: true,
   }),
 );

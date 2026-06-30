@@ -5,6 +5,14 @@ const { mongodbAdapter } = require("better-auth/adapters/mongodb");
 const { toNodeHandler } = require("better-auth/node");
 const { getDB } = require("../config/db");
 
+const {
+  BASE_APP_URL,
+  BETTER_AUTH_URL,
+  BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+} = require("../config/env");
+
 let auth;
 
 const initAuth = () => {
@@ -13,23 +21,20 @@ const initAuth = () => {
     throw new Error("DB not connected yet — call initAuth after connectDB()");
 
   auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://medicare-client-ruddy.vercel.app"
-  ],
-  database: mongodbAdapter(db),
+    baseURL: BETTER_AUTH_URL,
+    secret: BETTER_AUTH_SECRET,
+    trustedOrigins: [BASE_APP_URL],
+    database: mongodbAdapter(db),
 
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: false, // you're cross-DOMAIN, not cross-subdomain, so leave this off
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: false, // you're cross-DOMAIN, not cross-subdomain, so leave this off
+      },
+      defaultCookieAttributes: {
+        sameSite: "none",
+        secure: true,
+      },
     },
-  defaultCookieAttributes: {
-    sameSite: "none",
-    secure: true,
-    },
-  },
 
     emailAndPassword: {
       enabled: true,
@@ -37,8 +42,8 @@ const initAuth = () => {
 
     socialProviders: {
       google: {
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        clientId: GOOGLE_CLIENT_ID,
+        clientSecret: GOOGLE_CLIENT_SECRET,
       },
     },
 

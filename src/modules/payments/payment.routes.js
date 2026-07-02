@@ -48,9 +48,30 @@ router.get(
 
 /*
 |--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/:id/reconcile",
+  authenticate,
+  authorize("admin"),
+  paymentController.reconcile,
+);
+
+router.get(
+  "/",
+  authenticate,
+  authorize("admin"),
+  paymentController.getPayments,
+);
+
+/*
+|--------------------------------------------------------------------------
 | Shared Routes (Patient: own payment only / Admin: any payment)
 |--------------------------------------------------------------------------
-| NOTE: must come AFTER /me, or Express will treat "me" as the :id param.
+| NOTE: must come AFTER /me and /:id/reconcile, or Express will treat
+| "me"/"<id>/reconcile" segments as being consumed by this looser :id route.
 */
 
 router.get(
@@ -58,19 +79,6 @@ router.get(
   authenticate,
   authorize("patient", "admin"),
   paymentController.getPaymentById,
-);
-
-/*
-|--------------------------------------------------------------------------
-| Admin Routes
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/",
-  authenticate,
-  authorize("admin"),
-  paymentController.getPayments,
 );
 
 module.exports = router;

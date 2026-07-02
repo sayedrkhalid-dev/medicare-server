@@ -67,6 +67,28 @@ const verify = async (req, res, next) => {
 };
 
 /**
+ * Reconcile a stuck payment (Admin)
+ *
+ * For payments that ended up "succeeded" with no linked appointment
+ * because appointment creation failed after the charge went through.
+ */
+const reconcile = async (req, res, next) => {
+  try {
+    const result = await paymentService.reconcilePayment(req.params.id);
+
+    res.status(status.OK).json({
+      success: true,
+      message: result.alreadyReconciled
+        ? "Payment was already reconciled."
+        : "Payment reconciled and appointment created.",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Get My Payments (Patient)
  */
 const getMyPayments = async (req, res, next) => {
@@ -126,6 +148,7 @@ module.exports = {
   checkout,
   webhook,
   verify,
+  reconcile,
   getMyPayments,
   getPaymentById,
   getPayments,

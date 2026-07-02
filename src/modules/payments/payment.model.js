@@ -1,11 +1,22 @@
 const mongoose = require("mongoose");
 
-const { PAYMENT_STATUS } = require("./payment.constants");
+const {
+  PAYMENT_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_CURRENCY,
+} = require("./payment.constants");
 
 const paymentSchema = new mongoose.Schema(
   {
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
+    },
+
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Doctor",
       required: true,
       index: true,
     },
@@ -17,13 +28,6 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
-    doctorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Doctor",
-      required: true,
-      index: true,
-    },
-
     amount: {
       type: Number,
       required: true,
@@ -32,12 +36,14 @@ const paymentSchema = new mongoose.Schema(
 
     currency: {
       type: String,
-      default: "BDT",
+      enum: Object.values(PAYMENT_CURRENCY),
+      default: PAYMENT_CURRENCY.BDT,
     },
 
     paymentMethod: {
       type: String,
-      default: "stripe",
+      enum: Object.values(PAYMENT_METHOD),
+      default: PAYMENT_METHOD.STRIPE,
     },
 
     transactionId: {
@@ -47,20 +53,40 @@ const paymentSchema = new mongoose.Schema(
       index: true,
     },
 
+    stripeSessionId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+
+    stripePaymentIntentId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+
     status: {
       type: String,
       enum: Object.values(PAYMENT_STATUS),
-      default: PAYMENT_STATUS.PAID,
+      default: PAYMENT_STATUS.PENDING,
+      index: true,
     },
 
-    appointmentDate: {
-      type: Date,
-      required: true,
-    },
-
-    appointmentTime: {
+    receiptUrl: {
       type: String,
-      required: true,
+      default: null,
+    },
+
+    paidAt: {
+      type: Date,
+      default: null,
+    },
+
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
   },
   {
@@ -68,5 +94,15 @@ const paymentSchema = new mongoose.Schema(
     versionKey: false,
   },
 );
+
+paymentSchema.index({
+  patientId: 1,
+  createdAt: -1,
+});
+
+paymentSchema.index({
+  doctorId: 1,
+  createdAt: -1,
+});
 
 module.exports = mongoose.model("Payment", paymentSchema);

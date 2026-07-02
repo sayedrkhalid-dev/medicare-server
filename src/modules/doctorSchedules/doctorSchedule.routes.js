@@ -9,15 +9,7 @@ const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Public Routes
-|--------------------------------------------------------------------------
-*/
-
-router.get("/:doctorId", doctorScheduleController.getDoctorSchedules);
-
-/*
-|--------------------------------------------------------------------------
-| Doctor Routes
+| Doctor Routes (must come before dynamic /:doctorId route below)
 |--------------------------------------------------------------------------
 */
 
@@ -34,6 +26,22 @@ router.get(
   authorize("doctor"),
   doctorScheduleController.getMySchedules,
 );
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
+router.get("/:doctorId", doctorScheduleController.getDoctorSchedules);
+
+/*
+|--------------------------------------------------------------------------
+| Doctor Routes (continued — these use /:scheduleId, not /:doctorId,
+| so they don't collide with /me, but keep them below /:doctorId is fine
+| since /:scheduleId only matches PATCH/DELETE, different methods+paths)
+|--------------------------------------------------------------------------
+*/
 
 router.patch(
   "/:scheduleId",

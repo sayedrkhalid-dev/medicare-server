@@ -25,12 +25,7 @@ router.patch("/me", authenticate, userController.updateProfile);
 
 router.get("/", authenticate, authorize("admin"), userController.getAllUsers);
 
-router.get(
-  "/:userId",
-  authenticate,
-  authorize("admin"),
-  userController.getUserById,
-);
+router.get("/:userId", authenticate, userController.getUserById);
 
 router.patch(
   "/:userId/suspend",

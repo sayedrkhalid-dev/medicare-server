@@ -100,11 +100,17 @@ const createPrescription = async (doctorUserId, payload) => {
  * Patient prescriptions
  */
 const getMyPrescriptions = async (patientId) => {
-  return Prescription.find({
+  const prescriptions = await Prescription.find({
     patientId,
   }).sort({
     createdAt: -1,
   });
+
+  if (!prescriptions) {
+    throw createHttpError(404, "Prescription not found");
+  }
+
+  return prescriptions;
 };
 
 /**

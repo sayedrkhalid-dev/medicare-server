@@ -58,12 +58,15 @@ const getPatientAppointments = async (req, res, next) => {
  */
 const getAllAppointments = async (req, res, next) => {
   try {
-    const result = await appointmentService.getAllAppointments();
+    // Pass query parameters containing page, limit, status, search to service layout
+    const result = await appointmentService.getAllAppointments(req.query);
 
     res.status(status.OK).json({
       success: true,
       message: "All appointments retrieved successfully",
-      data: result,
+      // Destructure data layer payload cleanly matching format requirements
+      data: result.data,
+      meta: result.meta,
     });
   } catch (error) {
     next(error);
@@ -94,9 +97,11 @@ const getAppointmentById = async (req, res, next) => {
  */
 const cancelAppointment = async (req, res, next) => {
   try {
+    // Admin context might not have req.user.id match patientId, check role or bypass checking via service
+    const isPatient = req.user && req.user.role === "patient";
     const result = await appointmentService.cancelAppointment(
       req.params.appointmentId,
-      req.user.id,
+      isPatient ? req.user.id : null,
     );
 
     res.status(status.OK).json({

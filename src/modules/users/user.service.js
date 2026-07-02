@@ -70,7 +70,7 @@ const updateProfile = async (userId, payload) => {
 /**
  * Get all users with pagination, search and filters
  */
-const getAllUsers = async (page = 1, limit = 10, search, role, status) => {
+const getAllUsers = async (page = 1, limit = '', search, role, status) => {
   const db = getDB();
 
   const skip = (page - 1) * limit;

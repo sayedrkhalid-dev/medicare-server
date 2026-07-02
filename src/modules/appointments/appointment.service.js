@@ -207,6 +207,12 @@ const getAppointmentById = async (appointmentId) => {
 
 /**
  * Cancel appointment
+ *
+ * Only "pending" or "confirmed" appointments can be cancelled. An
+ * appointment that's already "completed" or "cancelled" (or "no-show")
+ * shouldn't be cancellable -- without this guard, a patient could cancel
+ * a consultation that already happened, which makes no sense and could
+ * corrupt reporting/history.
  */
 const cancelAppointment = async (appointmentId, patientId) => {
   const appointment = await Appointment.findById(appointmentId);
@@ -215,6 +221,14 @@ const cancelAppointment = async (appointmentId, patientId) => {
   // Optional Check depending on if Admin cancels or Patient cancels
   if (patientId && appointment.patientId.toString() !== patientId.toString()) {
     throw createHttpError(403, "Forbidden access");
+  }
+
+  const cancellableStatuses = ["pending", "confirmed"];
+  if (!cancellableStatuses.includes(appointment.appointmentStatus)) {
+    throw createHttpError(
+      400,
+      `Cannot cancel an appointment with status "${appointment.appointmentStatus}"`,
+    );
   }
 
   appointment.appointmentStatus = "cancelled";

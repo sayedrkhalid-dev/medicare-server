@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const createHttpError = require("http-errors");
 
 const stripe = require("../../lib/stripe");
@@ -35,7 +34,7 @@ const createCheckoutSession = async (patientId, payload) => {
 
   /*
   |--------------------------------------------------------------------------
-  | Duplicate Booking
+  | Duplicate Booking (same patient, same slot)
   |--------------------------------------------------------------------------
   */
 
@@ -51,6 +50,33 @@ const createCheckoutSession = async (patientId, payload) => {
 
   if (existingAppointment) {
     throw createHttpError(409, "Appointment already exists.");
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Slot Availability (any patient)
+  |--------------------------------------------------------------------------
+  | Without this check, a patient could pay for a slot that's already
+  | taken by someone else, or that doesn't exist on the doctor's active
+  | schedule at all -- and the failure would only surface *after* the
+  | charge, inside the webhook, with no way to stop the payment. Checking
+  | here doesn't fully eliminate the race (two patients could still both
+  | pass this check within the same instant and then race to checkout),
+  | but it closes the overwhelmingly common case: booking a slot that was
+  | already gone well before this request, or one that was never valid
+  | to begin with.
+  */
+
+  const availableSlots = await appointmentService.getAvailableSlots(
+    payload.doctorId,
+    payload.appointmentDate,
+  );
+
+  if (!availableSlots.includes(payload.appointmentTime)) {
+    throw createHttpError(
+      400,
+      "Selected slot is no longer available. Please choose a different time.",
+    );
   }
 
   /*
@@ -119,10 +145,7 @@ const handleWebhook = async (req) => {
       process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (error) {
-    console.error(
-      "[payments/webhook] signature verification failed:",
-      error.message,
-    );
+    console.error("[payments/webhook] signature verification failed:", error.message);
     throw error;
   }
 
@@ -141,23 +164,22 @@ const handleWebhook = async (req) => {
 /**
  * Finalize a completed Stripe Checkout session.
  *
- * IMPORTANT: Payment + Appointment are created inside a single Mongo
- * transaction. If appointment creation fails for any reason (slot taken
- * in the meantime, validation error, etc.), the whole transaction is
- * rolled back -- no orphaned "succeeded" Payment is left behind with a
- * null appointmentId. The error is re-thrown so the webhook handler
- * returns a non-2xx response, which makes Stripe automatically retry
- * delivery later (Stripe retries with backoff for up to ~3 days).
+ * IMPORTANT DESIGN NOTE: the Payment record is ALWAYS created and saved
+ * first, on its own, *before* attempting to create the Appointment. This
+ * is intentional -- the Stripe charge has already happened by this point,
+ * so we must have a durable record of it no matter what happens next.
  *
- * NOTE: this requires MongoDB to be running as a replica set (the default
- * on Atlas). If you're on a standalone instance, `session.startTransaction()`
- * will throw -- you'll need to enable a replica set first.
+ * (An earlier version of this function wrapped both writes in a single
+ * Mongo transaction so a failed appointment would roll back the payment
+ * too -- but that meant a failed appointment left literally zero trace
+ * in the database: money charged, nothing to debug, nothing to
+ * reconcile. That's worse than an orphaned "succeeded" payment with a
+ * null appointmentId, which reconcilePayment() below can recover from.)
  *
- * NOTE: this assumes `appointmentService.createAppointmentAfterPayment`
- * accepts a Mongoose session as an options argument and uses it for its
- * own writes. If it doesn't yet, pass the session through / use
- * `.session(dbSession)` on its internal queries, or this transaction
- * won't actually cover the appointment write.
+ * If appointment creation fails, we log the exact inputs (doctorId,
+ * requested date/time, computed day-of-week, and the list of slots the
+ * system considered available) so the failure is diagnosable from the
+ * Render logs alone, without needing to reproduce it.
  */
 const handleCheckoutCompleted = async (session) => {
   /*
@@ -177,60 +199,55 @@ const handleCheckoutCompleted = async (session) => {
     return;
   }
 
-  const dbSession = await mongoose.startSession();
+  /*
+  |--------------------------------------------------------------------------
+  | Create Payment (always -- the charge already happened)
+  |--------------------------------------------------------------------------
+  | Metadata is persisted on the Payment doc itself so a stuck/failed
+  | payment can later be reconciled without depending on the Stripe
+  | session still being retrievable (Checkout Sessions expire).
+  */
+
+  const payment = await Payment.create({
+    patientId: session.metadata.patientId,
+
+    doctorId: session.metadata.doctorId,
+
+    amount: session.amount_total / 100,
+
+    currency: session.currency,
+
+    paymentMethod: PAYMENT_METHOD.STRIPE,
+
+    transactionId: session.payment_intent,
+
+    stripeSessionId: session.id,
+
+    stripePaymentIntentId: session.payment_intent,
+
+    status: PAYMENT_STATUS.SUCCEEDED,
+
+    paidAt: new Date(),
+
+    metadata: {
+      doctorId: session.metadata.doctorId,
+      appointmentDate: session.metadata.appointmentDate,
+      appointmentTime: session.metadata.appointmentTime,
+      symptoms: session.metadata.symptoms || "",
+    },
+  });
+
+  console.log(
+    `[payments/webhook] payment ${payment._id} recorded for session ${session.id}, attempting appointment creation`,
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Create Appointment (best-effort; payment above is already safe)
+  |--------------------------------------------------------------------------
+  */
 
   try {
-    dbSession.startTransaction();
-
-    /*
-    |------------------------------------------------------------------------
-    | Create Payment
-    |------------------------------------------------------------------------
-    | Metadata is persisted on the Payment doc itself so a stuck/failed
-    | payment can later be reconciled without depending on the Stripe
-    | session still being retrievable (Checkout Sessions expire).
-    */
-
-    const [payment] = await Payment.create(
-      [
-        {
-          patientId: session.metadata.patientId,
-
-          doctorId: session.metadata.doctorId,
-
-          amount: session.amount_total / 100,
-
-          currency: session.currency,
-
-          paymentMethod: PAYMENT_METHOD.STRIPE,
-
-          transactionId: session.payment_intent,
-
-          stripeSessionId: session.id,
-
-          stripePaymentIntentId: session.payment_intent,
-
-          status: PAYMENT_STATUS.SUCCEEDED,
-
-          paidAt: new Date(),
-
-          metadata: {
-            doctorId: session.metadata.doctorId,
-            appointmentDate: session.metadata.appointmentDate,
-            appointmentTime: session.metadata.appointmentTime,
-            symptoms: session.metadata.symptoms || "",
-          },
-        },
-      ],
-      { session: dbSession },
-    );
-
-    /*
-    |------------------------------------------------------------------------
-    | Create Appointment
-    |------------------------------------------------------------------------
-    */
-
     const appointment = await appointmentService.createAppointmentAfterPayment(
       session.metadata.patientId,
       payment._id,
@@ -243,35 +260,46 @@ const handleCheckoutCompleted = async (session) => {
 
         symptoms: session.metadata.symptoms,
       },
-      { session: dbSession },
     );
-
-    /*
-    |------------------------------------------------------------------------
-    | Link Payment
-    |------------------------------------------------------------------------
-    */
 
     payment.appointmentId = appointment._id;
-
-    await payment.save({ session: dbSession });
-
-    await dbSession.commitTransaction();
+    await payment.save();
 
     console.log(
-      `[payments/webhook] payment ${payment._id} + appointment ${appointment._id} created for session ${session.id}`,
+      `[payments/webhook] appointment ${appointment._id} created and linked to payment ${payment._id}`,
     );
   } catch (error) {
-    await dbSession.abortTransaction();
+    /*
+    |------------------------------------------------------------------------
+    | DEBUG: dump exactly what was requested vs. what the system computed
+    | as available, so a "Selected slot is unavailable" failure is
+    | diagnosable straight from the logs.
+    |------------------------------------------------------------------------
+    */
+    let debugSlots = null;
+    try {
+      debugSlots = await appointmentService.getAvailableSlots(
+        session.metadata.doctorId,
+        session.metadata.appointmentDate,
+      );
+    } catch (slotsError) {
+      debugSlots = `<getAvailableSlots itself threw: ${slotsError.message}>`;
+    }
 
     console.error(
-      `[payments/webhook] failed to finalize session ${session.id}:`,
+      `[payments/webhook] appointment creation FAILED for payment ${payment._id} (session ${session.id}):`,
       error.message,
     );
+    console.error(
+      `[payments/webhook] debug context -> doctorId: ${session.metadata.doctorId}, ` +
+        `requestedDate: ${session.metadata.appointmentDate}, ` +
+        `requestedTime: ${session.metadata.appointmentTime}, ` +
+        `computedAvailableSlots: ${JSON.stringify(debugSlots)}`,
+    );
 
+    // Payment is preserved as-is (status: succeeded, appointmentId: null).
+    // Use POST /payments/:id/reconcile once the underlying issue is fixed.
     throw error;
-  } finally {
-    dbSession.endSession();
   }
 };
 
@@ -357,8 +385,7 @@ const reconcilePayment = async (paymentId) => {
   let doctorId, appointmentDate, appointmentTime, symptoms;
 
   if (payment.metadata && payment.metadata.appointmentDate) {
-    ({ doctorId, appointmentDate, appointmentTime, symptoms } =
-      payment.metadata);
+    ({ doctorId, appointmentDate, appointmentTime, symptoms } = payment.metadata);
   } else if (payment.stripeSessionId) {
     /*
     |------------------------------------------------------------------------
@@ -368,16 +395,10 @@ const reconcilePayment = async (paymentId) => {
     | this will throw and the payment must be reconciled manually.
     |------------------------------------------------------------------------
     */
-    const session = await stripe.checkout.sessions.retrieve(
-      payment.stripeSessionId,
-    );
-    ({ doctorId, appointmentDate, appointmentTime, symptoms } =
-      session.metadata);
+    const session = await stripe.checkout.sessions.retrieve(payment.stripeSessionId);
+    ({ doctorId, appointmentDate, appointmentTime, symptoms } = session.metadata);
   } else {
-    throw createHttpError(
-      422,
-      "No metadata available to reconcile this payment",
-    );
+    throw createHttpError(422, "No metadata available to reconcile this payment");
   }
 
   const appointment = await appointmentService.createAppointmentAfterPayment(
